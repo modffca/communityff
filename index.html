@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Free Fire Community Area</title>
+    <link href="https://fonts.googleapis.com/css2?family=Saira:ital,wght@0,400;0,700;1,800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="css/style.css">
+
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+</head>
+<body class="py-6">
+
+    <header class="flex flex-col lg:flex-row justify-between items-center mb-6 border-b border-gray-800 pb-5 gap-6">
+        <h1 class="text-2xl font-black-italic accent-yellow tracking-tighter italic uppercase">FREE FIRE <span class="text-white">COMMUNITY AREA</span></h1>
+        <nav class="flex flex-wrap justify-center gap-6 text-[11px] font-bold uppercase tracking-widest italic items-center">
+            <button onclick="showSection('dashboard')" class="hover:accent-yellow">Dashboard</button>
+            <div class="dropdown">
+                <div class="dropdown-trigger hover:accent-yellow flex items-center gap-1 uppercase">Official Event <span>▼</span></div>
+                <div class="dropdown-content">
+                    <button onclick="showSection('ffns-spring')">FFNS 2026 Spring</button>
+                    <button onclick="alert('Data akan segera di update')">FFNS 2026 Fall</button>
+                    <button onclick="alert('GYC 2026')">GYC 2026</button>
+                    <button onclick="alert('Ramadhan 2026')">Ramadhan 2026</button>
+                </div>
+            </div>
+            <button id="btn-nav-chat" onclick="showSection('chat')" class="hover:accent-yellow hidden">General Chat</button>
+            <button id="btn-nav-point" onclick="showSection('point')" class="hover:accent-yellow hidden">Tukar Point</button>
+            <div id="dropdown-ffca" class="dropdown hidden">
+                <div class="dropdown-trigger hover:accent-yellow flex items-center gap-1 uppercase">FFCA <span>▼</span></div>
+                <div class="dropdown-content">
+                    <button onclick="showSection('ffca-dashboard')">Community Builder</button>
+                    <button onclick="showSection('ffca-new')">FFCA</button>
+                </div>
+            </div>
+            <div id="auth-menu-top">
+                <button onclick="openModal('login')" id="btn-login-nav" class="bg-white/5 px-4 py-1 rounded-full hover:bg-white/10 transition">Login / Register</button>
+            </div>
+        </nav>
+    </header>
+
+    <div id="welcome-area" class="mb-10 hidden">
+        <div class="flex items-center gap-3">
+            <div class="h-1 w-12 bg-yellow-500"></div>
+            <p class="text-xl font-black-italic italic uppercase tracking-tight">HALO, <span id="user-display-name" class="accent-yellow">GUEST</span></p>
+            <button onclick="logout()" class="text-[9px] text-red-500 font-bold border border-red-500/30 px-3 py-1 rounded hover:bg-red-500 hover:text-white transition uppercase">Logout</button>
+        </div>
+    </div>
+
+    <!-- SECTION: Dashboard -->
+    <main id="section-dashboard" class="page-section">
+        <div class="flex flex-col lg:flex-row gap-8 mb-16">
+            <div class="lg:w-[60%] w-full bg-card p-5">
+                <h3 class="font-bold uppercase text-[10px] text-gray-500 mb-4 border-l-4 border-yellow-500 pl-3 italic">Top 10 Overall Leaderboard</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left table-mini">
+                        <thead class="text-gray-500 uppercase text-[10px]">
+                            <tr><th>Rank</th><th>Kota</th><th class="text-center">Event</th><th class="text-center text-white">Point</th><th class="text-center">Slot</th></tr>
+                        </thead>
+                        <tbody id="overall-list"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="lg:w-[40%] w-full bg-card p-5">
+                <h3 class="font-bold uppercase text-[10px] text-gray-500 mb-4 border-l-4 border-yellow-500 pl-3 italic">Leaderboard Maret</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left table-mini">
+                        <thead class="text-gray-500 uppercase text-[10px]">
+                            <tr><th>Rank</th><th>Kota</th><th class="text-center text-white">Point</th></tr>
+                        </thead>
+                        <tbody id="monthly-list"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-col md:flex-row justify-between items-end mb-8 gap-6">
+            <h2 class="text-3xl font-black-italic italic uppercase">Data <span class="accent-yellow">Komunitas</span></h2>
+            <input type="text" id="search-kota" oninput="updateDisplay()" placeholder="Cari Kota..." class="bg-[#1a1a1a] border border-gray-800 px-4 py-2 rounded-lg text-sm italic text-white outline-none focus:border-yellow-500">
+        </div>
+        <div id="komunitas-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"></div>
+        <div id="more-container" class="mt-12 flex justify-center hidden">
+            <button onclick="loadMore()" class="px-10 py-3 rounded-full font-black text-sm border-2 border-yellow-500 accent-yellow hover:bg-yellow-500 hover:text-black transition italic">LIHAT SELENGKAPNYA</button>
+        </div>
+    </main>
+
+    <!-- SECTION: Chat -->
+    <main id="section-chat" class="page-section hidden-section max-w-3xl mx-auto">
+        <div class="bg-card border border-gray-800 rounded-2xl overflow-hidden shadow-2xl">
+            <div class="p-4 border-b border-gray-800 bg-white/5 flex justify-between items-center">
+                <h2 class="font-black-italic italic accent-yellow uppercase">General Chat Area</h2>
+            </div>
+            <div id="chat-messages" class="custom-scroll"></div>
+            <div id="chat-input-container" class="p-4 bg-black/40 border-t border-gray-800"></div>
+        </div>
+    </main>
+
+    <!-- SECTION: Tukar Point -->
+    <main id="section-point" class="page-section hidden-section max-w-3xl mx-auto">
+        <div class="mb-8">
+            <div class="flex items-center gap-3 mb-2"><div class="h-1 w-10 bg-yellow-500"></div><h2 class="text-3xl font-black-italic italic uppercase">Tukar <span class="accent-yellow">Point</span></h2></div>
+            <p class="text-gray-500 text-[11px] uppercase italic font-bold">Fitur ini akan segera tersedia untuk member FFCA</p>
+        </div>
+        <div class="bg-card p-10 text-center border border-dashed border-yellow-500/30 rounded-2xl">
+            <p class="text-5xl mb-4">🎁</p>
+            <p class="font-black-italic italic uppercase accent-yellow text-xl mb-2">Coming Soon</p>
+            <p class="text-gray-500 text-[11px] italic uppercase">Sistem penukaran point sedang dalam pengembangan</p>
+        </div>
+    </main>
+
+    <!-- SECTION: FFNS 2026 Spring -->
+    <main id="section-ffns-spring" class="page-section hidden-section">
+        <!-- Header Banner -->
+        <div class="relative mb-10 rounded-2xl overflow-hidden border border-yellow-500/20" style="background: linear-gradient(135deg, #0a0a0a 0%, #1a1200 50%, #0a0a0a 100%);">
+            <div class="absolute inset-0 opacity-10" style="background: repeating-linear-gradient(45deg, #FFD700 0px, #FFD700 1px, transparent 1px, transparent 20px);"></div>
+            <div class="relative p-8 flex flex-col lg:flex-row items-center justify-between gap-6">
+                <div>
+                    <p class="text-[10px] font-bold uppercase tracking-widest text-yellow-500/60 mb-1 italic">Official Event • 2026</p>
+                    <h1 class="text-4xl lg:text-5xl font-black-italic italic uppercase leading-none">FREE FIRE <span class="accent-yellow">NATIONAL</span><br>SERIES <span class="text-white">2026 SPRING</span></h1>
+                    <p class="text-gray-400 text-[11px] uppercase italic font-bold mt-3 tracking-widest">Indonesia · Official Garena Event</p>
+                </div>
+                <div class="flex flex-col items-center gap-2">
+                    <div class="w-24 h-24 rounded-full border-4 border-yellow-500/40 flex items-center justify-center bg-black/50 text-4xl">🏆</div>
+                    <span class="text-[9px] uppercase italic font-black text-yellow-500 tracking-widest">Season Active</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Navigasi FFNS -->
+        <div class="flex gap-2 border-b border-gray-800 mb-8 overflow-x-auto pb-0">
+            <button onclick="switchFFNSTab('klasemen')" id="ffns-tab-klasemen" class="ffns-tab-btn active whitespace-nowrap px-5 py-3 text-[10px] font-black uppercase italic border-b-2 border-yellow-500 text-yellow-500">Grand Final</button>
+            <button onclick="switchFFNSTab('slot')" id="ffns-tab-slot" class="ffns-tab-btn whitespace-nowrap px-5 py-3 text-[10px] font-black uppercase italic border-b-2 border-transparent text-gray-500">Fix Slot City Qualifier</button>
+            <button onclick="switchFFNSTab('juara')" id="ffns-tab-juara" class="ffns-tab-btn whitespace-nowrap px-5 py-3 text-[10px] font-black uppercase italic border-b-2 border-transparent text-gray-500">Juara City Qualifier</button>
+        </div>
+
+        <!-- Tab: Grand Final (Klasemen) -->
+        <div id="ffns-content-klasemen" class="ffns-tab-content">
+            <!-- Podium Top 3 dari data real -->
+            <div id="ffns-podium" class="flex items-end justify-center gap-4 mb-10"></div>
+            <!-- Tabel Grand Final -->
+            <div class="bg-card p-5 rounded-xl border border-gray-800">
+                <h3 class="font-bold uppercase text-[10px] text-gray-500 mb-4 border-l-4 border-yellow-500 pl-3 italic">Klasemen Grand Final FFNS 2026 Spring</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left table-mini">
+                        <thead class="text-gray-500 uppercase text-[9px]">
+                            <tr>
+                                <th class="w-12">Rank</th>
+                                <th>Team</th>
+                                <th class="text-center">Booyah</th>
+                                <th class="text-center">Placement</th>
+                                <th class="text-center">Elims</th>
+                                <th class="text-center accent-yellow">Total Pts</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ffns-klasemen-body">
+                            <tr><td colspan="6" class="text-center py-8 accent-yellow italic font-black text-[10px]">LOADING DATA...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Fix Slot City Qualifier -->
+        <div id="ffns-content-slot" class="ffns-tab-content hidden">
+            <div class="mb-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                <div>
+                    <h3 class="font-black-italic italic uppercase text-xl">Fix Slot <span class="accent-yellow">City Qualifier</span></h3>
+                    <p class="text-[10px] text-gray-500 italic uppercase font-bold mt-1">Data slot resmi per kota berdasarkan deposit & registrasi</p>
+                </div>
+                <input type="text" id="search-slot" oninput="filterSlot()" placeholder="Cari Kota..." class="bg-[#1a1a1a] border border-gray-800 px-4 py-2 rounded-lg text-sm italic text-white outline-none focus:border-yellow-500">
+            </div>
+            <div class="bg-card p-5 border border-gray-800 rounded-xl">
+                <div class="overflow-x-auto max-h-[500px] custom-scroll">
+                    <table class="w-full text-left table-mini">
+                        <thead class="text-gray-500 uppercase text-[9px] sticky top-0 bg-[#121212] z-10">
+                            <tr>
+                                <th class="w-8">No</th>
+                                <th>Kota</th>
+                                <th class="text-center">Week</th>
+                                <th class="text-center">Deposit</th>
+                                <th class="text-center">Web Regist</th>
+                                <th class="text-center accent-yellow">Fixed Slot</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ffns-slot-body">
+                            <tr><td colspan="6" class="text-center py-8 accent-yellow italic font-black text-[10px]">LOADING DATA...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Juara City Qualifier -->
+        <div id="ffns-content-juara" class="ffns-tab-content hidden">
+            <div class="mb-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                <div>
+                    <h3 class="font-black-italic italic uppercase text-xl">Juara <span class="accent-yellow">City Qualifier</span></h3>
+                    <p class="text-[10px] text-gray-500 italic uppercase font-bold mt-1">Daftar juara 1, 2, dan 3 per kota di City Qualifier</p>
+                </div>
+                <input type="text" id="search-juara" oninput="filterJuara()" placeholder="Cari Kota..." class="bg-[#1a1a1a] border border-gray-800 px-4 py-2 rounded-lg text-sm italic text-white outline-none focus:border-yellow-500">
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="ffns-juara-grid">
+                <div class="col-span-full text-center py-8 accent-yellow italic font-black text-[10px]">LOADING DATA...</div>
+            </div>
+        </div>
+    </main>
+
+    <!-- SECTION: FFCA Dashboard -->
+    <main id="section-ffca-dashboard" class="page-section hidden-section">
+        <!-- Header -->
+        <div class="flex flex-col lg:flex-row justify-between items-start mb-8 gap-4">
+            <div>
+                <div class="flex items-center gap-3 mb-1">
+                    <div class="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div>
+                    <p class="text-[9px] uppercase italic font-black text-red-500 tracking-widest">FFCA Admin Panel</p>
+                </div>
+                <h2 class="text-3xl font-black-italic italic uppercase">Dashboard <span class="text-red-500">FFCA</span></h2>
+                <p class="text-gray-500 text-[10px] uppercase italic font-bold mt-1">Free Fire Community Area · Admin Overview</p>
+            </div>
+            <div class="bg-red-900/20 border border-red-500/30 px-4 py-2 rounded-lg">
+                <p class="text-[9px] text-red-400 uppercase italic font-bold">Logged in as</p>
+                <p id="ffca-admin-name" class="font-black-italic italic uppercase text-red-400 text-sm">—</p>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div class="bg-card p-5 border border-gray-800 rounded-xl hover:border-yellow-500/30 transition">
+                <p class="text-[9px] uppercase italic font-bold text-gray-500 mb-2">Total Komunitas</p>
+                <p id="stat-komunitas" class="text-3xl font-black-italic italic accent-yellow">—</p>
+                <p class="text-[9px] text-gray-600 italic mt-1">Kota Terdaftar</p>
+            </div>
+            <div class="bg-card p-5 border border-gray-800 rounded-xl hover:border-yellow-500/30 transition">
+                <p class="text-[9px] uppercase italic font-bold text-gray-500 mb-2">Total Event</p>
+                <p id="stat-event" class="text-3xl font-black-italic italic accent-yellow">—</p>
+                <p class="text-[9px] text-gray-600 italic mt-1">Event Digelar</p>
+            </div>
+            <div class="bg-card p-5 border border-gray-800 rounded-xl hover:border-yellow-500/30 transition">
+                <p class="text-[9px] uppercase italic font-bold text-gray-500 mb-2">Top Kota</p>
+                <p id="stat-topkota" class="text-lg font-black-italic italic accent-yellow leading-tight">—</p>
+                <p class="text-[9px] text-gray-600 italic mt-1">Point Tertinggi</p>
+            </div>
+            <div class="bg-card p-5 border border-gray-800 rounded-xl hover:border-red-500/30 transition border-red-900/20">
+                <p class="text-[9px] uppercase italic font-bold text-gray-500 mb-2">Status System</p>
+                <p class="text-sm font-black-italic italic text-green-400 uppercase">● Online</p>
+                <p class="text-[9px] text-gray-600 italic mt-1">All services running</p>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex flex-col lg:flex-row gap-6">
+            <!-- Tabel Komunitas Ringkas -->
+            <div class="lg:w-[60%] bg-card p-5 border border-gray-800 rounded-xl">
+                <h3 class="font-bold uppercase text-[10px] text-gray-500 mb-4 border-l-4 border-red-500 pl-3 italic">Daftar Komunitas (Overview)</h3>
+                <div class="overflow-x-auto max-h-[400px] custom-scroll">
+                    <table class="w-full text-left table-mini">
+                        <thead class="text-gray-500 uppercase text-[9px] sticky top-0 bg-[#121212]">
+                            <tr><th>Kota</th><th>PIC</th><th class="text-center">Event</th><th class="text-center">Provinsi</th></tr>
+                        </thead>
+                        <tbody id="ffca-komunitas-list"></tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- Side Panel -->
+            <div class="lg:w-[40%] flex flex-col gap-4">
+                <!-- Top 5 Leaderboard -->
+                <div class="bg-card p-5 border border-gray-800 rounded-xl">
+                    <h3 class="font-bold uppercase text-[10px] text-gray-500 mb-4 border-l-4 border-red-500 pl-3 italic">Top 5 Point Overall</h3>
+                    <div id="ffca-top5" class="space-y-2"></div>
+                </div>
+                <!-- Quick Info -->
+                <div class="bg-card p-5 border border-red-900/30 rounded-xl">
+                    <h3 class="font-bold uppercase text-[10px] text-red-500/70 mb-3 border-l-4 border-red-500 pl-3 italic">Info Panel</h3>
+                    <div class="space-y-2 text-[10px]">
+                        <div class="flex justify-between"><span class="text-gray-500 italic uppercase">Database</span><span class="text-green-400 font-bold italic">Google Sheets</span></div>
+                        <div class="flex justify-between"><span class="text-gray-500 italic uppercase">Chat Engine</span><span class="text-green-400 font-bold italic">Firebase RT</span></div>
+                        <div class="flex justify-between"><span class="text-gray-500 italic uppercase">Hosting</span><span class="text-green-400 font-bold italic">Vercel</span></div>
+                        <div class="flex justify-between"><span class="text-gray-500 italic uppercase">Version</span><span class="text-yellow-400 font-bold italic">v2.0.0</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- SECTION: FFCA New -->
+    <main id="section-ffca-new" class="page-section hidden-section">
+        <div class="text-center py-20">
+            <p class="text-5xl mb-4">🚧</p>
+            <p class="font-black-italic italic uppercase accent-yellow text-xl mb-2">Coming Soon</p>
+            <p class="text-gray-500 text-[11px] italic uppercase">Halaman FFCA sedang dalam pengembangan</p>
+        </div>
+    </main>
+
+    <!-- MODAL: Detail Event Kota -->
+    <div id="modal-event" class="modal">
+        <div class="bg-card p-6 w-full max-w-2xl border-t-4 border-yellow-500 relative shadow-2xl">
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-500 hover:text-white text-xl z-10">✕</button>
+            <div class="flex justify-between items-start mb-6 pr-10">
+                <div>
+                    <h2 id="event-title-kota" class="text-3xl font-black-italic italic accent-yellow uppercase leading-none">DETAIL KOTA</h2>
+                </div>
+                <div class="bg-black/50 p-1 rounded-full border border-gray-800 shadow-lg">
+                    <img id="modal-kota-logo" src="" class="w-16 h-16 rounded-full object-cover border-2 border-yellow-500/20">
+                </div>
+            </div>
+            <div class="flex gap-4 border-b border-gray-800 mb-6">
+                <button onclick="switchTab('list-event')" id="btn-tab-list" class="tab-btn active uppercase italic font-black">List Event</button>
+                <button onclick="switchTab('achievement')" id="btn-tab-ach" class="tab-btn uppercase italic font-black">Achievement</button>
+            </div>
+            <div id="tab-list-event" class="tab-content">
+                <div class="overflow-x-auto custom-scroll max-h-[350px]">
+                    <table class="w-full text-left table-mini">
+                        <thead class="text-gray-500 uppercase text-[9px] sticky top-0 bg-[#121212] z-10">
+                            <tr><th>Nama Event</th><th class="text-center">Bulan</th><th class="text-center">Slot</th><th class="text-right">Tanggal</th></tr>
+                        </thead>
+                        <tbody id="event-detail-list"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div id="tab-achievement" class="tab-content hidden py-10 text-center text-gray-500 italic uppercase font-bold text-[10px]">Belum ada achievement tercatat di kota ini.</div>
+        </div>
+    </div>
+
+    <!-- MODAL: Login -->
+    <div id="modal-login" class="modal">
+        <div class="bg-card p-8 w-full max-w-md border-t-4 border-yellow-500 relative text-center">
+            <h2 class="text-2xl font-black-italic accent-yellow mb-6 italic uppercase">Login Member</h2>
+            <input type="email" id="l-email" placeholder="Gmail" class="w-full bg-[#1a1a1a] border border-gray-800 p-3 rounded-lg mb-3 italic text-white outline-none">
+            <input type="password" id="l-pass" placeholder="Password" class="w-full bg-[#1a1a1a] border border-gray-800 p-3 rounded-lg mb-6 italic text-white outline-none">
+            <button onclick="handleLoginDirect()" class="w-full btn-yellow py-3 rounded-lg italic font-black">MASUK</button>
+            <button onclick="closeModal()" class="w-full mt-4 text-gray-600 text-[10px] font-bold uppercase italic text-center">Tutup</button>
+        </div>
+    </div>
+
+    <!-- Firebase Init -->
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDT9hPRbKJ3BRsnQ3R6su0YVA1C_YhaAN4",
+            authDomain: "ffca-chat.firebaseapp.com",
+            databaseURL: "https://ffca-chat-default-rtdb.firebaseio.com",
+            projectId: "ffca-chat",
+            storageBucket: "ffca-chat.firebasestorage.app",
+            messagingSenderId: "893006406369",
+            appId: "1:893006406369:web:d4c5e38f7d3ce9cde68da0",
+            measurementId: "G-4GXJLEDT7E"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+    </script>
+
+    <!-- Import JS modules -->
+    <script src="js/ui.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/chat.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/ffns.js"></script>
+
+    <!-- App Init -->
+    <script>
+        window.onload = () => {
+            initAuthUI();
+            initChatInputUI();
+            loadData();
+            // Isi nama admin di FFCA dashboard
+            const user = JSON.parse(localStorage.getItem('userFF'));
+            const adminNameEl = document.getElementById('ffca-admin-name');
+            if (user && adminNameEl) adminNameEl.innerText = user.nama;
+        };
+    </script>
+
+</body>
+</html>
