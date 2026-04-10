@@ -104,8 +104,13 @@ function loadAnalyticsData() {
                     const status = normalizeAnalyticsStatus(c[1]?.v || c[1]?.f);
                     const date = parseAnalyticsDate(c[12]);
                     const kota = c[21]?.v || c[21]?.f || 'Unknown';
+                    const onlineStatus = (c[8]?.v || c[8]?.f || '').toString().trim();
+                    const mode = (c[14]?.v || c[14]?.f || '').toString().trim();
+                    const eventTypeRaw = (c[22]?.v || c[22]?.f || '').toString().trim().toLowerCase();
+                    const eventType = eventTypeRaw.includes('nobar') ? 'Nobar' : 'turnamen';
+                    const eventName = c[5]?.v || c[5]?.f || 'Event';
                     if (!status || !date) return;
-                    analyticsEvents.push({source: sheet.name, status, date, kota});
+                    analyticsEvents.push({source: sheet.name, status, date, kota, onlineStatus, mode, eventType, eventName});
                 });
             });
     });
@@ -205,6 +210,7 @@ function updateAnalyticsDisplay() {
     const selectedMonth = monthSelect ? parseInt(monthSelect.value, 10) : new Date().getMonth();
     const selectedYear = yearSelect ? parseInt(yearSelect.value, 10) : new Date().getFullYear();
     const filtered = analyticsEvents.filter(e => e.date.getMonth() === selectedMonth && e.date.getFullYear() === selectedYear);
+    const okEvents = filtered.filter(e => e.status === 'ok');
 
     const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
     const dayCounts = Array.from({length: daysInMonth}, () => ({ok: 0, reject: 0}));
@@ -236,37 +242,71 @@ function updateAnalyticsDisplay() {
         </div>
         <div class="bg-[#111111] p-4 rounded-2xl border border-gray-800">
             <div class="flex flex-col gap-3">
-                <div class="flex justify-between items-center text-[10px] uppercase text-gray-400 mb-3"><span>Jumlah OK</span><span>${filtered.filter(x => x.status === 'ok').length}</span></div>
+                <div class="flex justify-between items-center text-[10px] uppercase text-gray-400 mb-3"><span>Jumlah OK</span><span>${okEvents.length}</span></div>
                 <div class="flex justify-between items-center text-[10px] uppercase text-gray-400"><span>Jumlah Reject</span><span>${filtered.filter(x => x.status === 'reject').length}</span></div>
                 <div class="flex justify-between items-center text-[10px] uppercase text-gray-400"><span>Total Hari</span><span>${daysInMonth}</span></div>
             </div>
         </div>
     </div>`;
 
+    const okListEl = document.getElementById('analytics-ok-list');
+    if (okListEl) {
+        okListEl.innerHTML = okEvents.length ? okEvents.slice(0, 20).map(ev => `
+            <div class="min-w-[260px] bg-[#111111] p-4 rounded-2xl border border-gray-800">
+                <p class="text-[10px] uppercase italic text-gray-500 mb-2">${ev.date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}</p>
+                <h4 class="font-black-italic italic uppercase text-sm mb-2">${ev.eventName}</h4>
+                <p class="text-[11px] text-gray-300 mb-3">${ev.kota}</p>
+                <div class="flex flex-wrap gap-2 text-[10px] uppercase">
+                    <span class="px-2 py-1 bg-green-500/10 text-emerald-300 rounded-full">${ev.onlineStatus || 'Unknown'}</span>
+                    <span class="px-2 py-1 bg-yellow-500/10 text-yellow-300 rounded-full">${ev.mode || 'Unknown'}</span>
+                    <span class="px-2 py-1 bg-white/10 rounded-full">${ev.eventType}</span>
+                </div>
+            </div>`).join('') : `<div class="text-gray-400 italic">Belum ada event OK untuk bulan ini.</div>`;
+    }
+
     const today = new Date();
     const currentDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     const scheduledCount = filtered.filter(e => e.date > currentDay && (e.date.getMonth() > today.getMonth() || e.date.getFullYear() > today.getFullYear())).length;
     const ongoingCount = filtered.filter(e => e.date >= currentDay && e.date.getMonth() === today.getMonth() && e.date.getFullYear() === today.getFullYear()).length;
     const completeCount = filtered.filter(e => e.date < currentDay).length;
+    const onlineCount = okEvents.filter(x => x.onlineStatus.toLowerCase().includes('online')).length;
+    const offlineCount = okEvents.filter(x => x.onlineStatus.toLowerCase().includes('offline')).length;
+    const modeBrCount = okEvents.filter(x => /battle royale/i.test(x.mode) && !/clash squad/i.test(x.mode)).length;
+    const modeCsCount = okEvents.filter(x => /clash squad/i.test(x.mode) && !/battle royale/i.test(x.mode)).length;
+    const modeBothCount = okEvents.filter(x => /battle royale/i.test(x.mode) && /clash squad/i.test(x.mode)).length;
 
     if (statusScheduled) statusScheduled.innerText = scheduledCount;
     if (statusOngoing) statusOngoing.innerText = ongoingCount;
     if (statusComplete) statusComplete.innerText = completeCount;
-    if (totalOk) totalOk.innerText = filtered.filter(x => x.status === 'ok').length;
+    if (totalOk) totalOk.innerText = okEvents.length;
     if (totalEvents) totalEvents.innerText = filtered.length;
+    const onlineCountEl = document.getElementById('analytics-online-count');
+    const offlineCountEl = document.getElementById('analytics-offline-count');
+    const modeBrEl = document.getElementById('analytics-mode-br');
+    const modeCsEl = document.getElementById('analytics-mode-cs');
+    const modeBothEl = document.getElementById('analytics-mode-both');
+    if (onlineCountEl) onlineCountEl.innerText = onlineCount;
+    if (offlineCountEl) offlineCountEl.innerText = offlineCount;
+    if (modeBrEl) modeBrEl.innerText = modeBrCount;
+    if (modeCsEl) modeCsEl.innerText = modeCsCount;
+    if (modeBothEl) modeBothEl.innerText = modeBothCount;
 
     if (cityList) {
-        const cityCounts = filtered.filter(x => x.status === 'ok').reduce((acc, curr) => {
+        const cityCounts = okEvents.reduce((acc, curr) => {
             const cityKey = curr.kota || 'Unknown';
-            acc[cityKey] = (acc[cityKey] || 0) + 1;
+            if (!acc[cityKey]) acc[cityKey] = { nobar: 0, turnamen: 0, total: 0 };
+            if (curr.eventType === 'Nobar') acc[cityKey].nobar += 1;
+            else acc[cityKey].turnamen += 1;
+            acc[cityKey].total += 1;
             return acc;
         }, {});
-        const cityEntries = Object.entries(cityCounts).sort((a, b) => b[1] - a[1]).slice(0, 6);
-        const maxCity = cityEntries.length ? cityEntries[0][1] : 1;
-        cityList.innerHTML = cityEntries.length ? cityEntries.map(([city, count]) => `
+        const cityEntries = Object.entries(cityCounts).sort((a, b) => b[1].total - a[1].total).slice(0, 6);
+        const maxCity = cityEntries.length ? cityEntries[0][1].total : 1;
+        cityList.innerHTML = cityEntries.length ? cityEntries.map(([city, counts]) => `
             <div>
-                <div class="flex justify-between text-[10px] uppercase text-gray-400 mb-1"><span>${city}</span><span>${count}</span></div>
-                <div class="h-2 bg-white/10 rounded-full overflow-hidden"><div class="h-full bg-yellow-500" style="width:${Math.round((count / maxCity) * 100)}%"></div></div>
+                <div class="flex justify-between text-[10px] uppercase text-gray-400 mb-1"><span>${city}</span><span>${counts.total}</span></div>
+                <div class="text-[11px] text-gray-300 mb-2">${counts.nobar} Nobar • ${counts.turnamen} Turnamen</div>
+                <div class="h-2 bg-white/10 rounded-full overflow-hidden"><div class="h-full bg-yellow-500" style="width:${Math.round((counts.total / maxCity) * 100)}%"></div></div>
             </div>
         `).join('') : `<p class="text-gray-400 text-[11px] italic">Belum ada data OK untuk kota.</p>`;
     }
