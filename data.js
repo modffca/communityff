@@ -221,11 +221,11 @@ function updateAnalyticsDisplay() {
     });
 
     const maxDayOk = Math.max(...dayCounts.map(d => d.ok), 1);
-    const dailyChart = `<div class="bg-[#111111] p-4 rounded-2xl border border-gray-800 min-h-[300px]">
-        <div class="grid grid-cols-7 gap-2 h-44 items-end">
+    const dailyChart = `<div class="bg-[#111111] p-4 rounded-2xl border border-gray-800 min-h-[300px] overflow-x-auto">
+        <div class="flex items-end gap-1 min-w-[900px] h-44">
             ${dayCounts.map((day, index) => {
-                const height = Math.max(8, Math.round((day.ok / maxDayOk) * 100));
-                return `<div class="flex flex-col items-center gap-2">
+                const height = Math.max(10, Math.round((day.ok / maxDayOk) * 100));
+                return `<div class="flex flex-col items-center gap-2 min-w-[18px]">
                     <div class="w-full h-44 flex items-end">
                         <div class="w-full rounded-t-2xl bg-emerald-400" style="height:${height}%"></div>
                     </div>
