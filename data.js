@@ -119,7 +119,7 @@ function loadAnalyticsData() {
 function normalizeAnalyticsStatus(value) {
     if (!value) return null;
     const text = value.toString().toLowerCase().trim();
-    if (text.includes('ok') || text.includes('accepted') || text.includes('accepted')) return 'ok';
+    if (text.includes('ok') || text.includes('accept') || text.includes('accepted') || text.includes('approved')) return 'ok';
     if (text.includes('reject') || text.includes('no') || text.includes('not')) return 'reject';
     return null;
 }
@@ -128,9 +128,25 @@ function parseAnalyticsDate(cell) {
     if (!cell) return null;
     const raw = cell.v || cell.f;
     if (!raw) return null;
-    const date = new Date(raw);
+    const rawString = raw.toString().trim();
+
+    // Support Google Sheets raw Date(...) values from Google JSON export
+    const jsDateMatch = rawString.match(/Date\((\d+),(\d+),(\d+)(?:,(\d+),(\d+),(\d+))?\)/);
+    if (jsDateMatch) {
+        const year = parseInt(jsDateMatch[1], 10);
+        const monthIndex = parseInt(jsDateMatch[2], 10);
+        const day = parseInt(jsDateMatch[3], 10);
+        const hour = jsDateMatch[4] ? parseInt(jsDateMatch[4], 10) : 0;
+        const minute = jsDateMatch[5] ? parseInt(jsDateMatch[5], 10) : 0;
+        const second = jsDateMatch[6] ? parseInt(jsDateMatch[6], 10) : 0;
+        const parsed = new Date(year, monthIndex, day, hour, minute, second);
+        if (!isNaN(parsed)) return parsed;
+    }
+
+    const date = new Date(rawString);
     if (!isNaN(date)) return date;
-    const parts = raw.toString().split(/[-\/\.]/).map(p => p.trim());
+
+    const parts = rawString.split(/[-\/\.]/).map(p => p.trim());
     if (parts.length >= 3) {
         let [first, second, third] = parts;
         if (third.length === 2) third = '20' + third;
