@@ -221,21 +221,25 @@ function updateAnalyticsDisplay() {
     });
 
     const maxDayOk = Math.max(...dayCounts.map(d => d.ok), 1);
-    const dailyChart = `<div class="bg-[#111111] p-4 rounded-2xl border border-gray-800 min-h-[300px] overflow-x-auto">
-        <div class="flex items-end gap-1 min-w-[900px] h-44">
-            ${dayCounts.map((day, index) => {
-                const height = Math.max(10, Math.round((day.ok / maxDayOk) * 100));
-                return `<div class="flex flex-col items-center gap-2 min-w-[18px]">
-                    <div class="w-full h-44 flex items-end">
-                        <div class="w-full rounded-t-2xl bg-emerald-400" style="height:${height}%"></div>
-                    </div>
-                    <div class="text-[9px] text-gray-400">${index + 1}</div>
-                </div>`;
-            }).join('')}
+    const gridTemplate = dayCounts.map(() => 'minmax(0,1fr)').join(' ');
+    const dailyChart = `<div class="bg-[#111111] p-4 rounded-2xl border border-gray-800 min-h-[340px] overflow-hidden analytics-chart-card">
+        <div class="relative h-48 w-full">
+            <div class="grid h-full gap-1" style="grid-template-columns:${gridTemplate};">
+                ${dayCounts.map((day, index) => {
+                    const height = Math.max(10, Math.round((day.ok / maxDayOk) * 100));
+                    return `<div class="relative group flex flex-col justify-end items-center" title="Hari ${index + 1}: ${day.ok} OK">
+                        <div class="relative w-full h-full flex items-end">
+                            <div class="analytics-chart-bar-inner w-full rounded-t-2xl bg-emerald-400" style="height:${height}%; animation-delay:${index * 20}ms;"></div>
+                        </div>
+                        <div class="mt-2 text-[9px] text-gray-400">${index + 1}</div>
+                        <div class="absolute -top-5 hidden group-hover:flex items-center justify-center rounded-full bg-white/10 px-2 py-1 text-[10px] text-white backdrop-blur-sm">${day.ok}</div>
+                    </div>`;
+                }).join('')}
+            </div>
         </div>
     </div>`;
 
-    const okSummary = `<div class="bg-[#111111] p-4 rounded-2xl border border-gray-800 min-h-[300px]">
+    const okSummary = `<div class="bg-[#111111] p-4 rounded-2xl border border-gray-800 min-h-[340px]">
             <div class="flex flex-col justify-between h-full gap-4">
                 <div>
                     <div class="flex justify-between items-center text-[10px] uppercase text-gray-400 mb-3"><span>Jumlah OK</span><span>${okEvents.length}</span></div>
