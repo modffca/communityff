@@ -220,7 +220,7 @@ function updateAnalyticsDisplay() {
     });
 
     const maxDayOk = Math.max(...dayCounts.map(d => d.ok), 1);
-    chartContainer.innerHTML = `<div class="bg-[#111111] p-4 rounded-2xl border border-gray-800">
+    const dailyChart = `<div class="bg-[#111111] p-4 rounded-2xl border border-gray-800 min-h-[280px]">
         <div class="space-y-3">${dayCounts.map((day, index) => {
             const width = maxDayOk ? Math.round((day.ok / maxDayOk) * 100) : 0;
             return `<div class="flex items-center gap-3 text-[10px] text-gray-400">
@@ -233,13 +233,19 @@ function updateAnalyticsDisplay() {
         }).join('')}</div>
     </div>`;
 
-    const okSummary = `<div class="bg-[#111111] p-4 rounded-2xl border border-gray-800">
-            <div class="flex flex-col gap-3">
-                <div class="flex justify-between items-center text-[10px] uppercase text-gray-400"><span>Jumlah OK</span><span>${okEvents.length}</span></div>
-                <div class="flex justify-between items-center text-[10px] uppercase text-gray-400"><span>Total Hari</span><span>${daysInMonth}</span></div>
+    const okSummary = `<div class="bg-[#111111] p-4 rounded-2xl border border-gray-800 min-h-[280px]">
+            <div class="flex flex-col justify-between h-full gap-4">
+                <div>
+                    <div class="flex justify-between items-center text-[10px] uppercase text-gray-400 mb-3"><span>Jumlah OK</span><span>${okEvents.length}</span></div>
+                    <div class="flex justify-between items-center text-[10px] uppercase text-gray-400 mb-3"><span>Total Hari</span><span>${daysInMonth}</span></div>
+                </div>
+                <div class="grid grid-cols-1 gap-3">
+                    <div class="rounded-2xl bg-white/5 p-3 text-[11px] uppercase text-gray-400">Rata-rata per hari: <span class="text-white">${Math.round(okEvents.length / daysInMonth || 0)}</span></div>
+                    <div class="rounded-2xl bg-white/5 p-3 text-[11px] uppercase text-gray-400">Hari tersentuh OK: <span class="text-white">${dayCounts.filter(d => d.ok > 0).length}</span></div>
+                </div>
             </div>
         </div>`;
-    chartContainer.innerHTML = `<div class="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">${chartContainer.innerHTML}${okSummary}</div>`;
+    chartContainer.innerHTML = `<div class="grid grid-cols-1 xl:grid-cols-[3fr_1.1fr] gap-4">${dailyChart}${okSummary}</div>`;
 
     const today = new Date();
     const currentDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
