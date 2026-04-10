@@ -107,7 +107,11 @@ function loadAnalyticsData() {
                     const onlineStatus = (c[8]?.v || c[8]?.f || '').toString().trim();
                     const mode = (c[14]?.v || c[14]?.f || '').toString().trim();
                     const eventTypeRaw = (c[22]?.v || c[22]?.f || '').toString().trim().toLowerCase();
-                    const eventType = eventTypeRaw.includes('nobar') ? 'Nobar' : 'turnamen';
+                    const eventType = sheet.name.toLowerCase().includes('nobar') ? 'Nobar'
+                        : sheet.name.toLowerCase().includes('turnamen') ? 'Turnamen'
+                        : eventTypeRaw.includes('nobar') ? 'Nobar'
+                        : eventTypeRaw.includes('turnamen') ? 'Turnamen'
+                        : 'Lainnya';
                     const eventName = c[5]?.v || c[5]?.f || 'Event';
                     if (!status || !date) return;
                     analyticsEvents.push({source: sheet.name, status, date, kota, onlineStatus, mode, eventType, eventName});
@@ -172,11 +176,8 @@ function initAnalyticsFilters() {
     const maxYear = Math.max(...years, now.getFullYear());
 
     if (yearSelect) {
-        yearSelect.innerHTML = Array.from({length: maxYear - minYear + 1}, (_, index) => {
-            const value = minYear + index;
-            return `<option value="${value}">${value}</option>`;
-        }).join('');
-        yearSelect.value = now.getFullYear();
+        yearSelect.innerHTML = `<option value="2026">2026</option>`;
+        yearSelect.value = 2026;
     }
 
     if (monthSelect) {
@@ -220,20 +221,21 @@ function updateAnalyticsDisplay() {
     });
 
     const maxDayOk = Math.max(...dayCounts.map(d => d.ok), 1);
-    const dailyChart = `<div class="bg-[#111111] p-4 rounded-2xl border border-gray-800 min-h-[280px]">
-        <div class="space-y-3">${dayCounts.map((day, index) => {
-            const width = maxDayOk ? Math.round((day.ok / maxDayOk) * 100) : 0;
-            return `<div class="flex items-center gap-3 text-[10px] text-gray-400">
-                <span class="w-6 text-right">${index + 1}</span>
-                <div class="h-4 w-full rounded-full bg-[#0d0d0d] overflow-hidden border border-gray-800">
-                    <div class="h-full bg-emerald-400" style="width:${width}%"></div>
-                </div>
-                <span class="w-8 text-right text-white">${day.ok}</span>
-            </div>`;
-        }).join('')}</div>
+    const dailyChart = `<div class="bg-[#111111] p-4 rounded-2xl border border-gray-800 min-h-[300px]">
+        <div class="grid grid-cols-7 gap-2 h-44 items-end">
+            ${dayCounts.map((day, index) => {
+                const height = Math.max(8, Math.round((day.ok / maxDayOk) * 100));
+                return `<div class="flex flex-col items-center gap-2">
+                    <div class="w-full h-44 flex items-end">
+                        <div class="w-full rounded-t-2xl bg-emerald-400" style="height:${height}%"></div>
+                    </div>
+                    <div class="text-[9px] text-gray-400">${index + 1}</div>
+                </div>`;
+            }).join('')}
+        </div>
     </div>`;
 
-    const okSummary = `<div class="bg-[#111111] p-4 rounded-2xl border border-gray-800 min-h-[280px]">
+    const okSummary = `<div class="bg-[#111111] p-4 rounded-2xl border border-gray-800 min-h-[300px]">
             <div class="flex flex-col justify-between h-full gap-4">
                 <div>
                     <div class="flex justify-between items-center text-[10px] uppercase text-gray-400 mb-3"><span>Jumlah OK</span><span>${okEvents.length}</span></div>
@@ -255,6 +257,25 @@ function updateAnalyticsDisplay() {
     const onlineCount = okEvents.filter(x => x.onlineStatus.toLowerCase().includes('online')).length;
     const offlineCount = okEvents.filter(x => x.onlineStatus.toLowerCase().includes('offline')).length;
     const modeBrCount = okEvents.filter(x => /battle royale/i.test(x.mode) && !/clash squad/i.test(x.mode)).length;
+    const statusPie = document.getElementById('analytics-status-chart');
+    const totalStatus = scheduledCount + ongoingCount + completeCount || 1;
+    const scheduledPct = Math.round((scheduledCount / totalStatus) * 100);
+    const ongoingPct = Math.round((ongoingCount / totalStatus) * 100);
+    const completePct = 100 - scheduledPct - ongoingPct;
+    if (statusPie) {
+        statusPie.innerHTML = `<div class="rounded-2xl border border-gray-800 bg-[#111111] p-4">
+            <div class="flex flex-col gap-4 xl:flex-row xl:items-center">
+                <div class="flex-1 flex items-center justify-center">
+                    <div class="w-40 h-40 rounded-full" style="background: conic-gradient(#38bdf8 0% ${scheduledPct}%, #facc15 ${scheduledPct}% ${scheduledPct + ongoingPct}%, #34d399 ${scheduledPct + ongoingPct}% 100%);"></div>
+                </div>
+                <div class="grid grid-cols-1 gap-3 flex-1 text-[11px] text-gray-300">
+                    <div class="flex justify-between items-center"><span>Scheduled</span><span class="text-white">${scheduledCount} (${scheduledPct}%)</span></div>
+                    <div class="flex justify-between items-center"><span>Ongoing</span><span class="text-white">${ongoingCount} (${ongoingPct}%)</span></div>
+                    <div class="flex justify-between items-center"><span>Complete</span><span class="text-white">${completeCount} (${completePct}%)</span></div>
+                </div>
+            </div>
+        </div>`;
+    }
     const modeCsCount = okEvents.filter(x => /clash squad/i.test(x.mode) && !/battle royale/i.test(x.mode)).length;
     const modeBothCount = okEvents.filter(x => /battle royale/i.test(x.mode) && /clash squad/i.test(x.mode)).length;
 
@@ -262,7 +283,7 @@ function updateAnalyticsDisplay() {
     if (statusOngoing) statusOngoing.innerText = ongoingCount;
     if (statusComplete) statusComplete.innerText = completeCount;
     if (totalOk) totalOk.innerText = okEvents.length;
-    if (totalEvents) totalEvents.innerText = filtered.length;
+    if (totalEvents) totalEvents.innerText = okEvents.length;
     const onlineCountEl = document.getElementById('analytics-online-count');
     const offlineCountEl = document.getElementById('analytics-offline-count');
     const modeBrEl = document.getElementById('analytics-mode-br');

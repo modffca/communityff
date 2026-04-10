@@ -117,7 +117,9 @@
                 </div>
                 <div class="bg-card border border-gray-800 rounded-xl px-4 py-3">
                     <p class="text-[9px] uppercase italic text-gray-500 mb-1">Tahun</p>
-                    <select id="analytics-year" onchange="updateAnalyticsDisplay()" class="bg-[#1a1a1a] border border-gray-800 px-3 py-2 rounded-lg text-sm italic outline-none"></select>
+                    <select id="analytics-year" onchange="updateAnalyticsDisplay()" class="bg-[#1a1a1a] border border-gray-800 px-3 py-2 rounded-lg text-sm italic outline-none">
+                        <option value="2026">2026</option>
+                    </select>
                 </div>
             </div>
         </div>
@@ -144,7 +146,8 @@
                         <h3 class="text-lg font-black-italic italic uppercase">Status Event</h3>
                     </div>
                 </div>
-                <div class="space-y-4">
+                <div id="analytics-status-chart" class="mb-4"></div>
+                <div class="grid grid-cols-1 gap-3">
                     <div class="flex justify-between text-[11px] uppercase text-gray-400"><span>Scheduled</span><span id="analytics-status-scheduled">0</span></div>
                     <div class="flex justify-between text-[11px] uppercase text-gray-400"><span>Ongoing</span><span id="analytics-status-ongoing">0</span></div>
                     <div class="flex justify-between text-[11px] uppercase text-gray-400"><span>Complete</span><span id="analytics-status-complete">0</span></div>
@@ -172,7 +175,7 @@
                         <p id="analytics-total-ok" class="text-3xl font-black-italic accent-yellow">0</p>
                     </div>
                     <div class="bg-white/5 p-4 rounded-2xl">
-                        <p class="text-[11px] uppercase italic text-gray-400 mb-2">Total Events</p>
+                        <p class="text-[11px] uppercase italic text-gray-400 mb-2">Total Event</p>
                         <p id="analytics-total-events" class="text-3xl font-black-italic">0</p>
                     </div>
                     <div class="bg-white/5 p-4 rounded-2xl">
