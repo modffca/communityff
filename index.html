@@ -17,6 +17,7 @@
         <h1 class="text-2xl font-black-italic accent-yellow tracking-tighter italic uppercase">FREE FIRE <span class="text-white">COMMUNITY AREA</span></h1>
         <nav class="flex flex-wrap justify-center gap-6 text-[11px] font-bold uppercase tracking-widest italic items-center">
             <button onclick="showSection('dashboard')" class="hover:accent-yellow">Dashboard</button>
+            <button onclick="showSection('analytic')" class="hover:accent-yellow">Analitic</button>
             <div class="dropdown">
                 <div class="dropdown-trigger hover:accent-yellow flex items-center gap-1 uppercase">Official Event <span>▼</span></div>
                 <div class="dropdown-content">
@@ -83,6 +84,100 @@
         <div id="komunitas-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"></div>
         <div id="more-container" class="mt-12 flex justify-center hidden">
             <button onclick="loadMore()" class="px-10 py-3 rounded-full font-black text-sm border-2 border-yellow-500 accent-yellow hover:bg-yellow-500 hover:text-black transition italic">LIHAT SELENGKAPNYA</button>
+        </div>
+    </main>
+
+    <!-- SECTION: Analitic -->
+    <main id="section-analytic" class="page-section hidden-section">
+        <div class="mb-8 flex flex-col lg:flex-row justify-between items-start gap-4">
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="h-1 w-12 bg-yellow-500"></div>
+                    <p class="text-xl font-black-italic italic uppercase tracking-tight">Analytic <span class="accent-yellow">Turnamen + Nobar</span></p>
+                </div>
+                <p class="text-gray-500 text-[11px] uppercase italic">Dashboard berbasis data dari sheet Data Turnamen dan Data Nobar</p>
+            </div>
+            <div class="flex flex-wrap gap-3">
+                <div class="bg-card border border-gray-800 rounded-xl px-4 py-3">
+                    <p class="text-[9px] uppercase italic text-gray-500 mb-1">Bulan</p>
+                    <select id="analytics-month" onchange="updateAnalyticsDisplay()" class="bg-[#1a1a1a] border border-gray-800 px-3 py-2 rounded-lg text-sm italic outline-none">
+                        <option value="0">Januari</option>
+                        <option value="1">Februari</option>
+                        <option value="2">Maret</option>
+                        <option value="3">April</option>
+                        <option value="4">Mei</option>
+                        <option value="5">Juni</option>
+                        <option value="6">Juli</option>
+                        <option value="7">Agustus</option>
+                        <option value="8">September</option>
+                        <option value="9">Oktober</option>
+                        <option value="10">November</option>
+                        <option value="11">Desember</option>
+                    </select>
+                </div>
+                <div class="bg-card border border-gray-800 rounded-xl px-4 py-3">
+                    <p class="text-[9px] uppercase italic text-gray-500 mb-1">Tahun</p>
+                    <select id="analytics-year" onchange="updateAnalyticsDisplay()" class="bg-[#1a1a1a] border border-gray-800 px-3 py-2 rounded-lg text-sm italic outline-none"></select>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-card p-5 rounded-2xl border border-gray-800 mb-6">
+            <div class="flex flex-col lg:flex-row justify-between items-start gap-4 mb-4">
+                <div>
+                    <p class="text-[10px] uppercase italic font-bold text-gray-500 mb-2">Grafik Harian</p>
+                    <h3 class="text-2xl font-black-italic italic uppercase">Total OK / Reject per Hari</h3>
+                    <p class="text-gray-500 text-[10px] mt-2">Klik pada bulan untuk melihat setiap data event selama 1 bulan.</p>
+                </div>
+                <div class="flex items-center gap-3 text-[10px] uppercase tracking-widest text-gray-400">
+                    <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-emerald-400"></span>OK</span>
+                    <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-red-500"></span>Reject</span>
+                </div>
+            </div>
+            <div id="analytics-daily-chart" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+            <div class="bg-card p-5 border border-gray-800 rounded-2xl">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <p class="text-[10px] uppercase italic text-gray-500">Overall Status</p>
+                        <h3 class="text-lg font-black-italic italic uppercase">Status Event</h3>
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    <div class="flex justify-between text-[11px] uppercase text-gray-400"><span>Scheduled</span><span id="analytics-status-scheduled">0</span></div>
+                    <div class="flex justify-between text-[11px] uppercase text-gray-400"><span>Ongoing</span><span id="analytics-status-ongoing">0</span></div>
+                    <div class="flex justify-between text-[11px] uppercase text-gray-400"><span>Complete</span><span id="analytics-status-complete">0</span></div>
+                </div>
+            </div>
+            <div class="bg-card p-5 border border-gray-800 rounded-2xl">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <p class="text-[10px] uppercase italic text-gray-500">By Kota</p>
+                        <h3 class="text-lg font-black-italic italic uppercase">Top Kota OK</h3>
+                    </div>
+                </div>
+                <div id="analytics-city-list" class="space-y-4 text-[11px]"></div>
+            </div>
+            <div class="bg-card p-5 border border-gray-800 rounded-2xl">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <p class="text-[10px] uppercase italic text-gray-500">Total Event</p>
+                        <h3 class="text-lg font-black-italic italic uppercase">OK Events</h3>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <div class="bg-white/5 p-4 rounded-2xl">
+                        <p class="text-[11px] uppercase italic text-gray-400 mb-2">Total OK</p>
+                        <p id="analytics-total-ok" class="text-4xl font-black-italic accent-yellow">0</p>
+                    </div>
+                    <div class="bg-white/5 p-4 rounded-2xl">
+                        <p class="text-[11px] uppercase italic text-gray-400 mb-2">Total Events</p>
+                        <p id="analytics-total-events" class="text-3xl font-black-italic">0</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </main>
 
@@ -363,6 +458,7 @@
             initAuthUI();
             initChatInputUI();
             loadData();
+            loadAnalyticsData();
             // Isi nama admin di FFCA dashboard
             const user = JSON.parse(localStorage.getItem('userFF'));
             const adminNameEl = document.getElementById('ffca-admin-name');

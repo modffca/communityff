@@ -6,9 +6,12 @@
 const gidLeaderboard = '0';
 const gidKomunitas = '1433263622';
 const gidListEvent = '1205931844';
+const gidTurnamen = '1506094915';
+const gidNobar = '1959787644';
 
 let masterKomunitas = [];
 let currentLimit = 20;
+let analyticsEvents = [];
 
 async function loadData() {
     // Leaderboard
@@ -81,6 +84,176 @@ async function loadData() {
                     </tr>`).join('');
             }
         });
+}
+
+function loadAnalyticsData() {
+    analyticsEvents = [];
+    const sheets = [
+        {name: 'Turnamen', gid: gidTurnamen},
+        {name: 'Nobar', gid: gidNobar}
+    ];
+
+    const requests = sheets.map(sheet => {
+        if (!sheet.gid || sheet.gid.includes('INSERT')) return Promise.resolve();
+        return fetch(`https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&tq&gid=${sheet.gid}`)
+            .then(r => r.text())
+            .then(t => {
+                const rows = JSON.parse(t.substr(47).slice(0, -2)).table.rows;
+                rows.slice(1).forEach(row => {
+                    const c = row.c;
+                    const status = normalizeAnalyticsStatus(c[1]?.v || c[1]?.f);
+                    const date = parseAnalyticsDate(c[12]);
+                    const kota = c[21]?.v || c[21]?.f || 'Unknown';
+                    if (!status || !date) return;
+                    analyticsEvents.push({source: sheet.name, status, date, kota});
+                });
+            });
+    });
+
+    Promise.all(requests).then(() => {
+        initAnalyticsFilters();
+        updateAnalyticsDisplay();
+    });
+}
+
+function normalizeAnalyticsStatus(value) {
+    if (!value) return null;
+    const text = value.toString().toLowerCase().trim();
+    if (text.includes('ok') || text.includes('accepted') || text.includes('accepted')) return 'ok';
+    if (text.includes('reject') || text.includes('no') || text.includes('not')) return 'reject';
+    return null;
+}
+
+function parseAnalyticsDate(cell) {
+    if (!cell) return null;
+    const raw = cell.v || cell.f;
+    if (!raw) return null;
+    const date = new Date(raw);
+    if (!isNaN(date)) return date;
+    const parts = raw.toString().split(/[-\/\.]/).map(p => p.trim());
+    if (parts.length >= 3) {
+        let [first, second, third] = parts;
+        if (third.length === 2) third = '20' + third;
+        if (parseInt(first, 10) > 31) [first, second] = [second, first];
+        const fixed = `${third}-${second.padStart(2, '0')}-${first.padStart(2, '0')}`;
+        const parsed = new Date(fixed);
+        if (!isNaN(parsed)) return parsed;
+    }
+    return null;
+}
+
+function initAnalyticsFilters() {
+    const monthSelect = document.getElementById('analytics-month');
+    const yearSelect = document.getElementById('analytics-year');
+    const now = new Date();
+    const years = analyticsEvents.length ? analyticsEvents.map(e => e.date.getFullYear()) : [now.getFullYear()];
+    const minYear = Math.min(...years, now.getFullYear());
+    const maxYear = Math.max(...years, now.getFullYear());
+
+    if (yearSelect) {
+        yearSelect.innerHTML = Array.from({length: maxYear - minYear + 1}, (_, index) => {
+            const value = minYear + index;
+            return `<option value="${value}">${value}</option>`;
+        }).join('');
+        yearSelect.value = now.getFullYear();
+    }
+
+    if (monthSelect) {
+        monthSelect.value = now.getMonth();
+    }
+}
+
+function updateAnalyticsDisplay() {
+    const monthSelect = document.getElementById('analytics-month');
+    const yearSelect = document.getElementById('analytics-year');
+    const chartContainer = document.getElementById('analytics-daily-chart');
+    const cityList = document.getElementById('analytics-city-list');
+    const statusScheduled = document.getElementById('analytics-status-scheduled');
+    const statusOngoing = document.getElementById('analytics-status-ongoing');
+    const statusComplete = document.getElementById('analytics-status-complete');
+    const totalOk = document.getElementById('analytics-total-ok');
+    const totalEvents = document.getElementById('analytics-total-events');
+
+    if (!chartContainer) return;
+    if (gidTurnamen.includes('INSERT') || gidNobar.includes('INSERT')) {
+        chartContainer.innerHTML = `<div class="p-6 text-center text-gray-400 italic">Silakan perbarui nilai <code>gidTurnamen</code> dan <code>gidNobar</code> di <strong>data.js</strong></div>`;
+        if (cityList) cityList.innerHTML = '';
+        if (statusScheduled) statusScheduled.innerText = '0';
+        if (statusOngoing) statusOngoing.innerText = '0';
+        if (statusComplete) statusComplete.innerText = '0';
+        if (totalOk) totalOk.innerText = '0';
+        if (totalEvents) totalEvents.innerText = '0';
+        return;
+    }
+
+    const selectedMonth = monthSelect ? parseInt(monthSelect.value, 10) : new Date().getMonth();
+    const selectedYear = yearSelect ? parseInt(yearSelect.value, 10) : new Date().getFullYear();
+    const filtered = analyticsEvents.filter(e => e.date.getMonth() === selectedMonth && e.date.getFullYear() === selectedYear);
+
+    const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+    const dayCounts = Array.from({length: daysInMonth}, () => ({ok: 0, reject: 0}));
+    filtered.forEach(e => {
+        const day = e.date.getDate();
+        if (day >= 1 && day <= daysInMonth) dayCounts[day - 1][e.status] += 1;
+    });
+
+    const maxDayTotal = Math.max(...dayCounts.map(d => d.ok + d.reject), 1);
+    chartContainer.innerHTML = `<div class="grid grid-cols-2 gap-4">
+        <div class="bg-[#111111] p-4 rounded-2xl border border-gray-800">
+            <div class="grid grid-cols-7 gap-1">${dayCounts.map((day, index) => {
+                const total = day.ok + day.reject;
+                const height = maxDayTotal ? Math.max(1, Math.round((total / maxDayTotal) * 100)) : 0;
+                const okPercent = total ? Math.round((day.ok / total) * 100) : 0;
+                const rejectPercent = total ? 100 - okPercent : 0;
+                return `<div class="flex flex-col items-center text-[9px] text-gray-400">
+                    <div class="relative w-full h-28 bg-[#0d0d0d] rounded-xl overflow-hidden border border-gray-800" title="OK: ${day.ok} • Reject: ${day.reject}">
+                        <div class="absolute bottom-0 left-0 right-0" style="height:${height}%;">
+                            <div class="h-full flex flex-col-reverse">
+                                <div style="height:${okPercent}%" class="bg-emerald-400"></div>
+                                <div style="height:${rejectPercent}%" class="bg-red-500"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <span class="mt-2">${index + 1}</span>
+                </div>`;
+            }).join('')}</div>
+        </div>
+        <div class="bg-[#111111] p-4 rounded-2xl border border-gray-800">
+            <div class="flex flex-col gap-3">
+                <div class="flex justify-between items-center text-[10px] uppercase text-gray-400 mb-3"><span>Jumlah OK</span><span>${filtered.filter(x => x.status === 'ok').length}</span></div>
+                <div class="flex justify-between items-center text-[10px] uppercase text-gray-400"><span>Jumlah Reject</span><span>${filtered.filter(x => x.status === 'reject').length}</span></div>
+                <div class="flex justify-between items-center text-[10px] uppercase text-gray-400"><span>Total Hari</span><span>${daysInMonth}</span></div>
+            </div>
+        </div>
+    </div>`;
+
+    const today = new Date();
+    const currentDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const scheduledCount = filtered.filter(e => e.date > currentDay && (e.date.getMonth() > today.getMonth() || e.date.getFullYear() > today.getFullYear())).length;
+    const ongoingCount = filtered.filter(e => e.date >= currentDay && e.date.getMonth() === today.getMonth() && e.date.getFullYear() === today.getFullYear()).length;
+    const completeCount = filtered.filter(e => e.date < currentDay).length;
+
+    if (statusScheduled) statusScheduled.innerText = scheduledCount;
+    if (statusOngoing) statusOngoing.innerText = ongoingCount;
+    if (statusComplete) statusComplete.innerText = completeCount;
+    if (totalOk) totalOk.innerText = filtered.filter(x => x.status === 'ok').length;
+    if (totalEvents) totalEvents.innerText = filtered.length;
+
+    if (cityList) {
+        const cityCounts = filtered.filter(x => x.status === 'ok').reduce((acc, curr) => {
+            const cityKey = curr.kota || 'Unknown';
+            acc[cityKey] = (acc[cityKey] || 0) + 1;
+            return acc;
+        }, {});
+        const cityEntries = Object.entries(cityCounts).sort((a, b) => b[1] - a[1]).slice(0, 6);
+        const maxCity = cityEntries.length ? cityEntries[0][1] : 1;
+        cityList.innerHTML = cityEntries.length ? cityEntries.map(([city, count]) => `
+            <div>
+                <div class="flex justify-between text-[10px] uppercase text-gray-400 mb-1"><span>${city}</span><span>${count}</span></div>
+                <div class="h-2 bg-white/10 rounded-full overflow-hidden"><div class="h-full bg-yellow-500" style="width:${Math.round((count / maxCity) * 100)}%"></div></div>
+            </div>
+        `).join('') : `<p class="text-gray-400 text-[11px] italic">Belum ada data OK untuk kota.</p>`;
+    }
 }
 
 function updateDisplay() {
