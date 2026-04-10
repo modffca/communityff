@@ -126,26 +126,14 @@
             <div class="flex flex-col lg:flex-row justify-between items-start gap-4 mb-4">
                 <div>
                     <p class="text-[10px] uppercase italic font-bold text-gray-500 mb-2">Grafik Harian</p>
-                    <h3 class="text-2xl font-black-italic italic uppercase">Total OK / Reject per Hari</h3>
-                    <p class="text-gray-500 text-[10px] mt-2">Klik pada bulan untuk melihat setiap data event selama 1 bulan.</p>
+                    <h3 class="text-2xl font-black-italic italic uppercase">Total OK per Hari</h3>
+                    <p class="text-gray-500 text-[10px] mt-2">Grafik hanya menampilkan event OK per hari.</p>
                 </div>
                 <div class="flex items-center gap-3 text-[10px] uppercase tracking-widest text-gray-400">
                     <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-emerald-400"></span>OK</span>
-                    <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-red-500"></span>Reject</span>
                 </div>
             </div>
             <div id="analytics-daily-chart" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
-        </div>
-
-        <div class="bg-card p-5 rounded-2xl border border-gray-800 mb-6">
-            <div class="flex items-center justify-between mb-4">
-                <div>
-                    <p class="text-[10px] uppercase italic font-bold text-gray-500 mb-2">List Event Harian</p>
-                    <h3 class="text-xl font-black-italic italic uppercase">OK Events Bulan Ini</h3>
-                </div>
-                <p class="text-[10px] uppercase italic text-gray-500">Hanya event OK</p>
-            </div>
-            <div id="analytics-ok-list" class="flex gap-4 overflow-x-auto pb-2"></div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
@@ -165,8 +153,8 @@
             <div class="bg-card p-5 border border-gray-800 rounded-2xl">
                 <div class="flex items-center justify-between mb-4">
                     <div>
-                        <p class="text-[10px] uppercase italic text-gray-500">By Kota</p>
-                        <h3 class="text-lg font-black-italic italic uppercase">Top Kota Bulan Ini</h3>
+                        <p class="text-[10px] uppercase italic text-gray-500">Ringkasan Bulan Ini</p>
+                        <h3 class="text-lg font-black-italic italic uppercase">Jumlah Nobar / Turnamen</h3>
                     </div>
                 </div>
                 <div id="analytics-city-list" class="space-y-4 text-[11px]"></div>
@@ -178,10 +166,10 @@
                         <h3 class="text-lg font-black-italic italic uppercase">OK Events</h3>
                     </div>
                 </div>
-                <div class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
                     <div class="bg-white/5 p-4 rounded-2xl">
                         <p class="text-[11px] uppercase italic text-gray-400 mb-2">Total OK</p>
-                        <p id="analytics-total-ok" class="text-4xl font-black-italic accent-yellow">0</p>
+                        <p id="analytics-total-ok" class="text-3xl font-black-italic accent-yellow">0</p>
                     </div>
                     <div class="bg-white/5 p-4 rounded-2xl">
                         <p class="text-[11px] uppercase italic text-gray-400 mb-2">Total Events</p>
@@ -189,23 +177,23 @@
                     </div>
                     <div class="bg-white/5 p-4 rounded-2xl">
                         <p class="text-[11px] uppercase italic text-gray-400 mb-2">Online</p>
-                        <p id="analytics-online-count" class="text-2xl font-black-italic">0</p>
+                        <p id="analytics-online-count" class="text-3xl font-black-italic">0</p>
                     </div>
                     <div class="bg-white/5 p-4 rounded-2xl">
                         <p class="text-[11px] uppercase italic text-gray-400 mb-2">Offline</p>
-                        <p id="analytics-offline-count" class="text-2xl font-black-italic">0</p>
+                        <p id="analytics-offline-count" class="text-3xl font-black-italic">0</p>
                     </div>
                     <div class="bg-white/5 p-4 rounded-2xl">
                         <p class="text-[11px] uppercase italic text-gray-400 mb-2">Mode BR</p>
-                        <p id="analytics-mode-br" class="text-2xl font-black-italic">0</p>
+                        <p id="analytics-mode-br" class="text-3xl font-black-italic">0</p>
                     </div>
                     <div class="bg-white/5 p-4 rounded-2xl">
                         <p class="text-[11px] uppercase italic text-gray-400 mb-2">Mode CS</p>
-                        <p id="analytics-mode-cs" class="text-2xl font-black-italic">0</p>
+                        <p id="analytics-mode-cs" class="text-3xl font-black-italic">0</p>
                     </div>
-                    <div class="bg-white/5 p-4 rounded-2xl">
+                    <div class="bg-white/5 p-4 rounded-2xl col-span-2">
                         <p class="text-[11px] uppercase italic text-gray-400 mb-2">Mode BR & CS</p>
-                        <p id="analytics-mode-both" class="text-2xl font-black-italic">0</p>
+                        <p id="analytics-mode-both" class="text-3xl font-black-italic">0</p>
                     </div>
                 </div>
             </div>

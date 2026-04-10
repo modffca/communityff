@@ -213,56 +213,33 @@ function updateAnalyticsDisplay() {
     const okEvents = filtered.filter(e => e.status === 'ok');
 
     const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
-    const dayCounts = Array.from({length: daysInMonth}, () => ({ok: 0, reject: 0}));
-    filtered.forEach(e => {
+    const dayCounts = Array.from({length: daysInMonth}, () => ({ok: 0}));
+    okEvents.forEach(e => {
         const day = e.date.getDate();
-        if (day >= 1 && day <= daysInMonth) dayCounts[day - 1][e.status] += 1;
+        if (day >= 1 && day <= daysInMonth) dayCounts[day - 1].ok += 1;
     });
 
-    const maxDayTotal = Math.max(...dayCounts.map(d => d.ok + d.reject), 1);
-    chartContainer.innerHTML = `<div class="grid grid-cols-2 gap-4">
-        <div class="bg-[#111111] p-4 rounded-2xl border border-gray-800">
-            <div class="grid grid-cols-7 gap-1">${dayCounts.map((day, index) => {
-                const total = day.ok + day.reject;
-                const height = maxDayTotal ? Math.max(1, Math.round((total / maxDayTotal) * 100)) : 0;
-                const okPercent = total ? Math.round((day.ok / total) * 100) : 0;
-                const rejectPercent = total ? 100 - okPercent : 0;
-                return `<div class="flex flex-col items-center text-[9px] text-gray-400">
-                    <div class="relative w-full h-28 bg-[#0d0d0d] rounded-xl overflow-hidden border border-gray-800" title="OK: ${day.ok} • Reject: ${day.reject}">
-                        <div class="absolute bottom-0 left-0 right-0" style="height:${height}%;">
-                            <div class="h-full flex flex-col-reverse">
-                                <div style="height:${okPercent}%" class="bg-emerald-400"></div>
-                                <div style="height:${rejectPercent}%" class="bg-red-500"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <span class="mt-2">${index + 1}</span>
-                </div>`;
-            }).join('')}</div>
-        </div>
-        <div class="bg-[#111111] p-4 rounded-2xl border border-gray-800">
-            <div class="flex flex-col gap-3">
-                <div class="flex justify-between items-center text-[10px] uppercase text-gray-400 mb-3"><span>Jumlah OK</span><span>${okEvents.length}</span></div>
-                <div class="flex justify-between items-center text-[10px] uppercase text-gray-400"><span>Jumlah Reject</span><span>${filtered.filter(x => x.status === 'reject').length}</span></div>
-                <div class="flex justify-between items-center text-[10px] uppercase text-gray-400"><span>Total Hari</span><span>${daysInMonth}</span></div>
-            </div>
-        </div>
+    const maxDayOk = Math.max(...dayCounts.map(d => d.ok), 1);
+    chartContainer.innerHTML = `<div class="bg-[#111111] p-4 rounded-2xl border border-gray-800">
+        <div class="space-y-3">${dayCounts.map((day, index) => {
+            const width = maxDayOk ? Math.round((day.ok / maxDayOk) * 100) : 0;
+            return `<div class="flex items-center gap-3 text-[10px] text-gray-400">
+                <span class="w-6 text-right">${index + 1}</span>
+                <div class="h-4 w-full rounded-full bg-[#0d0d0d] overflow-hidden border border-gray-800">
+                    <div class="h-full bg-emerald-400" style="width:${width}%"></div>
+                </div>
+                <span class="w-8 text-right text-white">${day.ok}</span>
+            </div>`;
+        }).join('')}</div>
     </div>`;
 
-    const okListEl = document.getElementById('analytics-ok-list');
-    if (okListEl) {
-        okListEl.innerHTML = okEvents.length ? okEvents.slice(0, 20).map(ev => `
-            <div class="min-w-[260px] bg-[#111111] p-4 rounded-2xl border border-gray-800">
-                <p class="text-[10px] uppercase italic text-gray-500 mb-2">${ev.date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}</p>
-                <h4 class="font-black-italic italic uppercase text-sm mb-2">${ev.eventName}</h4>
-                <p class="text-[11px] text-gray-300 mb-3">${ev.kota}</p>
-                <div class="flex flex-wrap gap-2 text-[10px] uppercase">
-                    <span class="px-2 py-1 bg-green-500/10 text-emerald-300 rounded-full">${ev.onlineStatus || 'Unknown'}</span>
-                    <span class="px-2 py-1 bg-yellow-500/10 text-yellow-300 rounded-full">${ev.mode || 'Unknown'}</span>
-                    <span class="px-2 py-1 bg-white/10 rounded-full">${ev.eventType}</span>
-                </div>
-            </div>`).join('') : `<div class="text-gray-400 italic">Belum ada event OK untuk bulan ini.</div>`;
-    }
+    const okSummary = `<div class="bg-[#111111] p-4 rounded-2xl border border-gray-800">
+            <div class="flex flex-col gap-3">
+                <div class="flex justify-between items-center text-[10px] uppercase text-gray-400"><span>Jumlah OK</span><span>${okEvents.length}</span></div>
+                <div class="flex justify-between items-center text-[10px] uppercase text-gray-400"><span>Total Hari</span><span>${daysInMonth}</span></div>
+            </div>
+        </div>`;
+    chartContainer.innerHTML = `<div class="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">${chartContainer.innerHTML}${okSummary}</div>`;
 
     const today = new Date();
     const currentDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
@@ -292,23 +269,34 @@ function updateAnalyticsDisplay() {
     if (modeBothEl) modeBothEl.innerText = modeBothCount;
 
     if (cityList) {
-        const cityCounts = okEvents.reduce((acc, curr) => {
-            const cityKey = curr.kota || 'Unknown';
-            if (!acc[cityKey]) acc[cityKey] = { nobar: 0, turnamen: 0, total: 0 };
-            if (curr.eventType === 'Nobar') acc[cityKey].nobar += 1;
-            else acc[cityKey].turnamen += 1;
-            acc[cityKey].total += 1;
+        const counts = okEvents.reduce((acc, curr) => {
+            if (curr.eventType === 'Nobar') acc.nobar += 1;
+            else if (curr.eventType === 'Turnamen') acc.turnamen += 1;
+            else acc.other += 1;
             return acc;
-        }, {});
-        const cityEntries = Object.entries(cityCounts).sort((a, b) => b[1].total - a[1].total).slice(0, 6);
-        const maxCity = cityEntries.length ? cityEntries[0][1].total : 1;
-        cityList.innerHTML = cityEntries.length ? cityEntries.map(([city, counts]) => `
-            <div>
-                <div class="flex justify-between text-[10px] uppercase text-gray-400 mb-1"><span>${city}</span><span>${counts.total}</span></div>
-                <div class="text-[11px] text-gray-300 mb-2">${counts.nobar} Nobar • ${counts.turnamen} Turnamen</div>
-                <div class="h-2 bg-white/10 rounded-full overflow-hidden"><div class="h-full bg-yellow-500" style="width:${Math.round((counts.total / maxCity) * 100)}%"></div></div>
-            </div>
-        `).join('') : `<p class="text-gray-400 text-[11px] italic">Belum ada data OK untuk kota.</p>`;
+        }, { nobar: 0, turnamen: 0, other: 0 });
+        const total = counts.nobar + counts.turnamen + counts.other;
+        cityList.innerHTML = total ? `
+            <div class="grid gap-4">
+                <div class="rounded-2xl border border-gray-800 bg-white/5 p-4">
+                    <div class="flex justify-between text-[10px] uppercase text-gray-400 mb-2"><span>Total OK</span><span>${total}</span></div>
+                    <div class="text-[11px] text-gray-300">${counts.nobar} Nobar • ${counts.turnamen} Turnamen${counts.other ? ` • ${counts.other} Lainnya` : ''}</div>
+                </div>
+                <div class="grid grid-cols-3 gap-3 text-center text-[11px] uppercase">
+                    <div class="rounded-2xl border border-gray-800 bg-white/5 p-3">
+                        <div class="text-gray-400 mb-1">Nobar</div>
+                        <div class="text-2xl font-black-italic">${counts.nobar}</div>
+                    </div>
+                    <div class="rounded-2xl border border-gray-800 bg-white/5 p-3">
+                        <div class="text-gray-400 mb-1">Turnamen</div>
+                        <div class="text-2xl font-black-italic">${counts.turnamen}</div>
+                    </div>
+                    <div class="rounded-2xl border border-gray-800 bg-white/5 p-3">
+                        <div class="text-gray-400 mb-1">OK</div>
+                        <div class="text-2xl font-black-italic">${total}</div>
+                    </div>
+                </div>
+            </div>` : `<p class="text-gray-400 text-[11px] italic">Belum ada data OK untuk bulan ini.</p>`;
     }
 }
 
